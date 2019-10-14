@@ -1,6 +1,7 @@
 
 package com.liferay.training.gradebook.web.portlet.action;
 
+import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
@@ -13,6 +14,7 @@ import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import com.liferay.training.gradebook.configuration.GradebookSystemServiceConfiguration;
 import com.liferay.training.gradebook.model.Assignment;
 import com.liferay.training.gradebook.service.AssignmentService;
 import com.liferay.training.gradebook.web.constants.GradebookPortletKeys;
@@ -20,12 +22,15 @@ import com.liferay.training.gradebook.web.constants.MVCCommandNames;
 import com.liferay.training.gradebook.web.display.context.AssignmentsManagementToolbarDisplayContext;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.portlet.PortletException;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -33,21 +38,20 @@ import org.osgi.service.component.annotations.Reference;
  * 
  * @author liferay
  */
-@Component(
-	immediate = true,
-	property = {
-		"javax.portlet.name=" + GradebookPortletKeys.GRADEBOOK,
-		"mvc.command.name=/",
-		"mvc.command.name=" + MVCCommandNames.VIEW_ASSIGNMENTS
-	},
-	service = MVCRenderCommand.class
-)
+@Component(immediate = true, configurationPid = "com.liferay.training.gradebook.configuration.GradebookSystemServiceConfiguration", property = {
+		"javax.portlet.name=" + GradebookPortletKeys.GRADEBOOK, "mvc.command.name=/",
+		"mvc.command.name=" + MVCCommandNames.VIEW_ASSIGNMENTS }, service = MVCRenderCommand.class)
 public class ViewAssignmentsMVCRenderCommand implements MVCRenderCommand {
 
+	@Activate
+	@Modified
+	protected void activate(Map<String, Object> properties) {
+		_gradebookSystemServiceConfiguration = ConfigurableUtil
+				.createConfigurable(GradebookSystemServiceConfiguration.class, properties);
+	}
+
 	@Override
-	public String render(
-		RenderRequest renderRequest, RenderResponse renderResponse)
-		throws PortletException {
+	public String render(RenderRequest renderRequest, RenderResponse renderResponse) throws PortletException {
 
 		// Add assignment list related attributes.
 
@@ -57,7 +61,6 @@ public class ViewAssignmentsMVCRenderCommand implements MVCRenderCommand {
 
 		addManagementToolbarAttributes(renderRequest, renderResponse);
 
-		
 		return "/view.jsp";
 	}
 
@@ -68,18 +71,14 @@ public class ViewAssignmentsMVCRenderCommand implements MVCRenderCommand {
 	 */
 	private void addAssignmentListAttributes(RenderRequest renderRequest) {
 
-		ThemeDisplay themeDisplay =
-			(ThemeDisplay) renderRequest.getAttribute(WebKeys.THEME_DISPLAY);
+		ThemeDisplay themeDisplay = (ThemeDisplay) renderRequest.getAttribute(WebKeys.THEME_DISPLAY);
 
 		// Resolve start and end for the search.
 
-		int currentPage = ParamUtil.getInteger(
-			renderRequest, SearchContainer.DEFAULT_CUR_PARAM,
-			SearchContainer.DEFAULT_CUR);
+		int currentPage = ParamUtil.getInteger(renderRequest, SearchContainer.DEFAULT_CUR_PARAM,
+				SearchContainer.DEFAULT_CUR);
 
-		int delta = ParamUtil.getInteger(
-			renderRequest, SearchContainer.DEFAULT_DELTA_PARAM,
-			SearchContainer.DEFAULT_DELTA);
+		int delta = _gradebookSystemServiceConfiguration.elementPerPage();
 
 		int start = ((currentPage > 0) ? (currentPage - 1) : 0) * delta;
 		int end = start + delta;
@@ -91,38 +90,33 @@ public class ViewAssignmentsMVCRenderCommand implements MVCRenderCommand {
 		// get localized
 		// sort options.
 
-		String orderByCol =
-			ParamUtil.getString(renderRequest, "orderByCol", "title");
-		String orderByType =
-			ParamUtil.getString(renderRequest, "orderByType", "asc");
+		String orderByCol = ParamUtil.getString(renderRequest, "orderByCol", "title");
+		String orderByType = ParamUtil.getString(renderRequest, "orderByType", "asc");
 
 		// Create comparator
 
-		OrderByComparator<Assignment> comp =
-			OrderByComparatorFactoryUtil.create(
-				"Assignment", orderByCol, !("asc").equals(orderByType));
+		OrderByComparator<Assignment> comp = OrderByComparatorFactoryUtil.create("Assignment", orderByCol,
+				!("asc").equals(orderByType));
 
 		// Get keywords.
 		// Notice that cleaning keywords is not implemented.
 
 		String keywords = ParamUtil.getString(renderRequest, "keywords");
-		
+
 		// Get the workflow status for the list.
-		
+
 		int status = getAllowedWorkflowStatus(renderRequest);
-		
+
 		// Call the service to get the list of assignments.
-		
-		List<Assignment> assigments =
-			_assignmentService.getAssignmentsByKeywords(
-				themeDisplay.getScopeGroupId(), keywords, start, end, status, comp);
+
+		List<Assignment> assigments = _assignmentService.getAssignmentsByKeywords(themeDisplay.getScopeGroupId(),
+				keywords, start, end, status, comp);
 
 		// Set request attributes.
 
 		renderRequest.setAttribute("assignments", assigments);
-		renderRequest.setAttribute(
-			"assignmentCount", _assignmentService.getAssignmentsCountByKeywords(
-				themeDisplay.getScopeGroupId(), keywords, status));
+		renderRequest.setAttribute("assignmentCount",
+				_assignmentService.getAssignmentsCountByKeywords(themeDisplay.getScopeGroupId(), keywords, status));
 
 	}
 
@@ -132,50 +126,43 @@ public class ViewAssignmentsMVCRenderCommand implements MVCRenderCommand {
 	 * @param renderRequest
 	 * @param renderResponse
 	 */
-	private void addManagementToolbarAttributes(
-		RenderRequest renderRequest, RenderResponse renderResponse) {
+	private void addManagementToolbarAttributes(RenderRequest renderRequest, RenderResponse renderResponse) {
 
-		LiferayPortletRequest liferayPortletRequest =
-			_portal.getLiferayPortletRequest(renderRequest);
+		LiferayPortletRequest liferayPortletRequest = _portal.getLiferayPortletRequest(renderRequest);
 
-		LiferayPortletResponse liferayPortletResponse =
-			_portal.getLiferayPortletResponse(renderResponse);
+		LiferayPortletResponse liferayPortletResponse = _portal.getLiferayPortletResponse(renderResponse);
 
-		AssignmentsManagementToolbarDisplayContext assignmentsManagementToolbarDisplayContext =
-			new AssignmentsManagementToolbarDisplayContext(
-				liferayPortletRequest, liferayPortletResponse,
-				_portal.getHttpServletRequest(renderRequest));
+		AssignmentsManagementToolbarDisplayContext assignmentsManagementToolbarDisplayContext = new AssignmentsManagementToolbarDisplayContext(
+				liferayPortletRequest, liferayPortletResponse, _portal.getHttpServletRequest(renderRequest));
 
-		renderRequest.setAttribute(
-			"assignmentsManagementToolbarDisplayContext",
-			assignmentsManagementToolbarDisplayContext);
+		renderRequest.setAttribute("assignmentsManagementToolbarDisplayContext",
+				assignmentsManagementToolbarDisplayContext);
 
 	}
-	
+
 	/**
 	 * Returns workflow status current user is allowed to see.
 	 * 
-	 * This simple example returns ANY status for company admin and
-	 * APPROVED for other users.
+	 * This simple example returns ANY status for company admin and APPROVED for
+	 * other users.
 	 * 
 	 * @param renderRequest
 	 * @return
 	 */
 	private int getAllowedWorkflowStatus(RenderRequest renderRequest) {
 
-		ThemeDisplay themeDisplay =
-			(ThemeDisplay) renderRequest.getAttribute(WebKeys.THEME_DISPLAY);
-		
-		PermissionChecker  permissionChecker = themeDisplay.getPermissionChecker();
-		
+		ThemeDisplay themeDisplay = (ThemeDisplay) renderRequest.getAttribute(WebKeys.THEME_DISPLAY);
+
+		PermissionChecker permissionChecker = themeDisplay.getPermissionChecker();
+
 		int status;
-		
+
 		if (permissionChecker.isCompanyAdmin()) {
 			status = WorkflowConstants.STATUS_ANY;
 		} else {
 			status = WorkflowConstants.STATUS_APPROVED;
 		}
-		
+
 		return status;
 	}
 
@@ -184,4 +171,6 @@ public class ViewAssignmentsMVCRenderCommand implements MVCRenderCommand {
 
 	@Reference
 	private Portal _portal;
+
+	protected volatile GradebookSystemServiceConfiguration _gradebookSystemServiceConfiguration;
 }

@@ -11,4 +11,7 @@ dependencies {
 	compileOnly group: "com.liferay", name: "com.liferay.frontend.taglib.clay", version: "2.1.6" /*1.4.6 , 2.1.6 */
 	compileOnly group: "com.liferay", name: "com.liferay.petra.function", version: "3.0.0"
 	compile project(":modules:services:gradebook:gradebook-api")
+	
+	compileOnly group: "biz.aQute.bnd", name: "biz.aQute.bndlib", version: "3.5.0"
+	compileOnly group: "com.liferay", name: "com.liferay.portal.configuration.metatype.api", version: "1.0.0"
 }
