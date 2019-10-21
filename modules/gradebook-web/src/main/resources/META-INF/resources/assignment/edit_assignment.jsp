@@ -47,7 +47,6 @@
 				<%-- Title field. --%>
 				
 				<aui:input name="title">
-				
 					<aui:validator name="required" />
 					
 					<%-- Custom AUI validator. --%>
@@ -59,7 +58,7 @@
 							
 							return wordExpression.test(val);
 						}
-					</aui:validator>
+					</aui:validator>					
 				</aui:input>
 
 				<%-- Description field. --%>

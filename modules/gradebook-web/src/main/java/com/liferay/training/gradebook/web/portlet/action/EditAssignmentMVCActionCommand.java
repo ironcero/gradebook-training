@@ -91,9 +91,9 @@ public class EditAssignmentMVCActionCommand extends BaseMVCActionCommand {
 
 			// Set error messages from the service layer.
 			
-			// e.getErrors().forEach(key -> SessionErrors.add(actionRequest, key));
+			e.getErrors().forEach(key -> SessionErrors.add(actionRequest, key));
 			
-			actionResponse.setRenderParameter(
+			actionResponse.getRenderParameters().setValue(
 				"mvcRenderCommandName", MVCCommandNames.EDIT_ASSIGNMENT);			
 
 		}
@@ -105,7 +105,7 @@ public class EditAssignmentMVCActionCommand extends BaseMVCActionCommand {
 			
 			SessionErrors.add(actionRequest, "error.assignment-service-error");
 
-			actionResponse.setRenderParameter(
+			actionResponse.getRenderParameters().setValue(
 				"mvcRenderCommandName", MVCCommandNames.EDIT_ASSIGNMENT);			
 		}
 	}

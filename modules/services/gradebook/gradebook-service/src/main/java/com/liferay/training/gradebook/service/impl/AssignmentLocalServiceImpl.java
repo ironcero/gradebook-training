@@ -27,6 +27,7 @@ import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.training.gradebook.model.Assignment;
 import com.liferay.training.gradebook.service.base.AssignmentLocalServiceBaseImpl;
+import com.liferay.training.gradebook.service.validation.AssignmentValidator;
 
 import java.util.Date;
 import java.util.List;
@@ -39,64 +40,64 @@ import org.osgi.service.component.annotations.Component;
  * The implementation of the assignment local service.
  *
  * <p>
- * All custom service methods should be put in this class. Whenever methods are added, rerun ServiceBuilder to copy their definitions into the <code>com.liferay.training.gradebook.service.AssignmentLocalService</code> interface.
+ * All custom service methods should be put in this class. Whenever methods are
+ * added, rerun ServiceBuilder to copy their definitions into the
+ * <code>com.liferay.training.gradebook.service.AssignmentLocalService</code>
+ * interface.
  *
  * <p>
- * This is a local service. Methods of this service will not have security checks based on the propagated JAAS credentials because this service can only be accessed from within the same VM.
+ * This is a local service. Methods of this service will not have security
+ * checks based on the propagated JAAS credentials because this service can only
+ * be accessed from within the same VM.
  * </p>
  *
  * @author Brian Wing Shun Chan
  * @see AssignmentLocalServiceBaseImpl
  */
-@Component(
-	property = "model.class.name=com.liferay.training.gradebook.model.Assignment",
-	service = AopService.class
-)
+@Component(property = "model.class.name=com.liferay.training.gradebook.model.Assignment", service = AopService.class)
 public class AssignmentLocalServiceImpl extends AssignmentLocalServiceBaseImpl {
-	
+
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never reference this class directly. Use <code>com.liferay.training.gradebook.service.AssignmentLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.training.gradebook.service.AssignmentLocalServiceUtil</code>.
+	 * Never reference this class directly. Use
+	 * <code>com.liferay.training.gradebook.service.AssignmentLocalService</code>
+	 * via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use
+	 * <code>com.liferay.training.gradebook.service.AssignmentLocalServiceUtil</code
+	 * >.
 	 */
 	public Assignment addAssignment(long groupId, Map<Locale, String> titleMap, String description, Date dueDate,
 			ServiceContext serviceContext) throws PortalException {
+
+		// Validate assignment parameters.
+		
+		AssignmentValidator.validate(titleMap, description, dueDate);
 
 		//
 		// ( 1 ) - Get group.
 		//
 		// Group is used for the scoping the Assignment entity for the site.
 		// Hint: use groupPersistence findBy finder method or groupLocalService
-
 		Group group = groupLocalService.getGroup(groupId);
-		
 		//
 		// ( 2 ) - Get user.
 		//
 		// Hint: get the userId from the ServiceContext
 		// then use userPersistence findBy finder method or userLocalService
-
 		long userId = serviceContext.getUserId();
-
 		User user = userLocalService.getUser(userId);
-
-		//			
+		//
 		// ( 3 ) - Generate primary key for the new assignment.
-		//		
+		//
 		// Hint: use counterLocalService's class name tied signature
-		//		
-
+		//
 		long assignmentId = counterLocalService.increment(Assignment.class.getName());
-
 		//
 		// ( 4 ) - Create a new assignment object.
 		//
 		// Hint: use the available method from superclass
-		
 		Assignment assignment = createAssignment(assignmentId);
-
 		// Populate all assignment object fields
-
 		assignment.setCompanyId(group.getCompanyId());
 		assignment.setGroupId(groupId);
 		assignment.setUserId(userId);
@@ -104,26 +105,22 @@ public class AssignmentLocalServiceImpl extends AssignmentLocalServiceBaseImpl {
 		assignment.setDueDate(dueDate);
 		assignment.setDescription(description);
 		assignment.setUserName(user.getScreenName());
-		
 		assignment.setCreateDate(serviceContext.getCreateDate(new Date()));
 		assignment.setModifiedDate(serviceContext.getModifiedDate(new Date()));
-
 		//
 		// ( 5 ) - Persist the assignment.
 		//
 		// Hint: use super.addAssignment()
-	
 		assignment = super.addAssignment(assignment);
-		
 		//
 		// ( 6 ) Return the created Assignment.
 		//
-		
 		return assignment;
 	}
 
 	/**
-	 * Notice: we can "silence" generated, unwanted signatures simply by making an override.
+	 * Notice: we can "silence" generated, unwanted signatures simply by making an
+	 * override.
 	 */
 	@Override
 	public Assignment addAssignment(Assignment assignment) {
@@ -134,17 +131,56 @@ public class AssignmentLocalServiceImpl extends AssignmentLocalServiceBaseImpl {
 
 		Assignment assignment = getAssignment(assignmentId);
 
-		return deleteAssignment(assignment);		
+		return deleteAssignment(assignment);
 	}
 
 	public Assignment deleteAssignment(Assignment assignment) {
 
-		//	
+		//
 		// ( 7 ) - Delete assignment.
 		//
 		// Hint: Use super.deleteAssignment()
-		
+
 		return super.deleteAssignment(assignment);
+	}
+
+	public Assignment updateAssignment(long assignmentId, Map<Locale, String> titleMap, String description,
+			Date dueDate, ServiceContext serviceContext) throws PortalException {
+		
+		// Validate assignment parameters.
+
+		AssignmentValidator.validate(titleMap, description, dueDate);
+		
+		//
+		// ( 11 ) - Get Assignment to be updated
+		//
+		// Hint: Use a generated getter in a base class.
+
+		Assignment assignment = getAssignment(assignmentId);
+
+		// Update the changes to assignment
+
+		assignment.setTitleMap(titleMap);
+		assignment.setDueDate(dueDate);
+		assignment.setDescription(description);
+		assignment.setModifiedDate(new Date());
+
+		// ( 12 ) - Persist the assignment
+		// Hint: use super.updateAssignment()
+
+		assignment = super.updateAssignment(assignment);
+
+		// ( 13 ) - Return the updated Assignment
+
+		return assignment;
+	}
+
+	/**
+	 * We can "silence" generated, unwanted signatures simply by making an override.
+	 */
+	@Override
+	public Assignment updateAssignment(Assignment assignment) {
+		throw new UnsupportedOperationException("Not supported.");
 	}
 
 	public List<Assignment> getAssignmentsByGroupId(long groupId) {
@@ -153,18 +189,17 @@ public class AssignmentLocalServiceImpl extends AssignmentLocalServiceBaseImpl {
 		// ( 8 ) - Get assignments by groupId.
 		//
 		// Hint: Use assignmentPersistence findBy finder methods.
-		
+
 		return assignmentPersistence.findByGroupId(groupId);
 	}
 
-	public List<Assignment> getAssignmentsByGroupId(
-		long groupId, int start, int end) {
+	public List<Assignment> getAssignmentsByGroupId(long groupId, int start, int end) {
 
 		//
 		// ( 9 ) - Get assignments by groupId.
 		//
 		// Hint: Use assignmentPersistence findBy finder methods.
-		
+
 		return assignmentPersistence.findByGroupId(groupId, start, end);
 	}
 
@@ -174,47 +209,10 @@ public class AssignmentLocalServiceImpl extends AssignmentLocalServiceBaseImpl {
 		// ( 10 ) - Get assignments by groupId.
 		//
 		// Hint: Use assignmentPersistence countBy methods.
-		
+
 		return assignmentPersistence.countByGroupId(groupId);
 	}
-	
-	
-	public Assignment updateAssignment(long assignmentId, Map<Locale, String> titleMap, String description,
-			Date dueDate, ServiceContext serviceContext) throws PortalException {
 
-		//
-		// ( 11 ) - Get Assignment to be updated
-		//
-		// Hint: Use a generated getter in a base class.
-
-		Assignment assignment = getAssignment(assignmentId); 
-		
-		// Update the changes to assignment
-		
-		assignment.setTitleMap(titleMap);
-		assignment.setDueDate(dueDate);
-		assignment.setDescription(description);
-		assignment.setModifiedDate(new Date());
-		
-		// ( 12 ) - Persist the assignment
-		// Hint: use super.updateAssignment()
-		
-		assignment = super.updateAssignment(assignment);
-		
-		// ( 13 ) - Return the updated Assignment
-		
-		return assignment;
-	}
-
-	/**
-	 * We can "silence" generated, unwanted signatures simply by making an override.
-	 */
-	@Override
-	public Assignment updateAssignment(Assignment assignment) {
-		throw new UnsupportedOperationException(
-				"Not supported.");
-	}
-	
 	/**
 	 * Gets assignments by keywords and status.
 	 * 
@@ -228,63 +226,41 @@ public class AssignmentLocalServiceImpl extends AssignmentLocalServiceBaseImpl {
 	 * @param orderByComparator
 	 * @return
 	 */
-	public List<Assignment> getAssignmentsByKeywords(
-		long groupId, String keywords, int start, int end, int status,
-		OrderByComparator<Assignment> orderByComparator) {
+	public List<Assignment> getAssignmentsByKeywords(long groupId, String keywords, int start, int end, int status,
+			OrderByComparator<Assignment> orderByComparator) {
 
-		DynamicQuery assignmentQuery =
-			dynamicQuery().add(RestrictionsFactoryUtil.eq("groupId", groupId));
+		DynamicQuery assignmentQuery = dynamicQuery().add(RestrictionsFactoryUtil.eq("groupId", groupId));
 
 		if (status != WorkflowConstants.STATUS_ANY) {
 			assignmentQuery.add(RestrictionsFactoryUtil.eq("status", status));
 		}
 
 		if (Validator.isNotNull(keywords)) {
-			Disjunction disjunctionQuery =
-				RestrictionsFactoryUtil.disjunction();
-			disjunctionQuery.add(
-				RestrictionsFactoryUtil.like("title", "%" + keywords + "%"));
-			disjunctionQuery.add(
-				RestrictionsFactoryUtil.like(
-					"description", "%" + keywords + "%"));
+			Disjunction disjunctionQuery = RestrictionsFactoryUtil.disjunction();
+			disjunctionQuery.add(RestrictionsFactoryUtil.like("title", "%" + keywords + "%"));
+			disjunctionQuery.add(RestrictionsFactoryUtil.like("description", "%" + keywords + "%"));
 			assignmentQuery.add(disjunctionQuery);
 		}
 
-		return assignmentLocalService.dynamicQuery(
-			assignmentQuery, start, end, orderByComparator);
+		return assignmentLocalService.dynamicQuery(assignmentQuery, start, end, orderByComparator);
 	}
-	
-	/**
-	 * Get assignment count by keywords and status.
-	 * 
-	 * This example uses dynamic queries.
-	 * 
-	 * @param groupId
-	 * @param keywords
-	 * @param status
-	 * @return
-	 */
-	public long getAssignmentsCountByKeywords(
-		long groupId, String keywords, int status) {
 
-		DynamicQuery assignmentQuery =
-			dynamicQuery().add(RestrictionsFactoryUtil.eq("groupId", groupId));
+	public long getAssignmentsCountByKeywords(long groupId, String keywords, int status) {
+
+		DynamicQuery assignmentQuery = dynamicQuery().add(RestrictionsFactoryUtil.eq("groupId", groupId));
 
 		if (status != WorkflowConstants.STATUS_ANY) {
 			assignmentQuery.add(RestrictionsFactoryUtil.eq("status", status));
 		}
 
 		if (Validator.isNotNull(keywords)) {
-			Disjunction disjunctionQuery =
-				RestrictionsFactoryUtil.disjunction();
-			disjunctionQuery.add(
-				RestrictionsFactoryUtil.like("title", "%" + keywords + "%"));
-			disjunctionQuery.add(
-				RestrictionsFactoryUtil.like(
-					"description", "%" + keywords + "%"));
+			Disjunction disjunctionQuery = RestrictionsFactoryUtil.disjunction();
+			disjunctionQuery.add(RestrictionsFactoryUtil.like("title", "%" + keywords + "%"));
+			disjunctionQuery.add(RestrictionsFactoryUtil.like("description", "%" + keywords + "%"));
 			assignmentQuery.add(disjunctionQuery);
 		}
 
 		return assignmentLocalService.dynamicQueryCount(assignmentQuery);
 	}
+
 }

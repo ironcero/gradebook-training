@@ -226,15 +226,16 @@ public class AssignmentsManagementToolbarDisplayContext {
 	private PortletURL _getCurrentSortingURL() throws PortletException {
 
 		Map<String, String[]> parsedParameterMap = new HashMap<String, String[]>();
-		
+
 		_currentURLObj.getParameterMap().entrySet().stream().forEach(entry -> {
 			String key = entry.getKey();
 			String[] value = entry.getValue();
-			if(value != null && value.length > 0 && value[0] != null && !value[0].isEmpty() && !value[0].equals("null")) {
+			if (value != null && value.length > 0 && value[0] != null && !value[0].isEmpty()
+					&& !value[0].equals("null")) {
 				parsedParameterMap.put(key, value);
 			}
 		});
-		
+
 		_currentURLObj.setParameters(parsedParameterMap);
 
 		PortletURL sortingURL = PortletURLUtil.clone(_currentURLObj, _liferayPortletResponse);

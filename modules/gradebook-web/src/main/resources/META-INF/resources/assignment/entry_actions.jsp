@@ -10,43 +10,27 @@
 
 	<%-- Edit action. --%>
 
-	<c:if
-		test="${assignmentPermissionChecker.contains(permissionChecker, scopeGroupId, assignment.assignmentId, 'UPDATE' )}">
-		<portlet:renderURL var="editAssignmentURL">
-			<portlet:param name="mvcRenderCommandName"
-				value="<%=MVCCommandNames.EDIT_ASSIGNMENT %>" />
-			<portlet:param name="redirect" value="${currentURL}" />
-			<portlet:param name="assignmentId" value="${assignment.assignmentId}" />
-		</portlet:renderURL>
 
-		<liferay-ui:icon message="edit" url="${editAssignmentURL}" />
-	</c:if>
-	
+	<portlet:renderURL var="editAssignmentURL">
+		<portlet:param name="mvcRenderCommandName"
+			value="<%=MVCCommandNames.EDIT_ASSIGNMENT%>" />
+		<portlet:param name="redirect" value="${currentURL}" />
+		<portlet:param name="assignmentId" value="${assignment.assignmentId}" />
+	</portlet:renderURL>
+
+	<liferay-ui:icon message="edit" url="${editAssignmentURL}" />
+
+
 	<%-- Permissions action. --%>
-	
-	<c:if
-		test="${assignmentPermissionChecker.contains(permissionChecker, scopeGroupId, assignment.assignmentId, 'PERMISSIONS')}">
 
-		<liferay-security:permissionsURL
-			modelResource="com.liferay.training.gradebook.model.Assignment"
-			modelResourceDescription="${assignment.getTitle(locale)}"
-			resourcePrimKey="${assignment.assignmentId}" 
-			var="permissionsURL" 
-		/>
-
-		<liferay-ui:icon message="permissions" url="${permissionsURL}" />
-	</c:if>
-		
 	<%-- Delete action. --%>
-	
-	<c:if
-		test="${assignmentPermissionChecker.contains(permissionChecker, scopeGroupId, assignment.assignmentId, 'DELETE')}">
 
-		<portlet:actionURL name="<%=MVCCommandNames.DELETE_ASSIGNMENT %>" var="deleteAssignmentURL">
-			<portlet:param name="redirect" value="${currentURL}" />
-			<portlet:param name="assignmentId" value="${assignment.assignmentId}" />
-		</portlet:actionURL>
+	<portlet:actionURL name="<%=MVCCommandNames.DELETE_ASSIGNMENT%>"
+		var="deleteAssignmentURL">
+		<portlet:param name="redirect" value="${currentURL}" />
+		<portlet:param name="assignmentId" value="${assignment.assignmentId}" />
+	</portlet:actionURL>
 
-		<liferay-ui:icon-delete url="${deleteAssignmentURL}" />
-	</c:if>
+	<liferay-ui:icon-delete url="${deleteAssignmentURL}" />
+
 </liferay-ui:icon-menu>

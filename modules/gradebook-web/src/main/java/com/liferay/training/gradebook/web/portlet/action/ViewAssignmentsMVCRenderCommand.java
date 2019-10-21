@@ -38,9 +38,15 @@ import org.osgi.service.component.annotations.Reference;
  * 
  * @author liferay
  */
-@Component(immediate = true, configurationPid = "com.liferay.training.gradebook.configuration.GradebookSystemServiceConfiguration", property = {
-		"javax.portlet.name=" + GradebookPortletKeys.GRADEBOOK, "mvc.command.name=/",
-		"mvc.command.name=" + MVCCommandNames.VIEW_ASSIGNMENTS }, service = MVCRenderCommand.class)
+@Component(
+		immediate = true, 
+		configurationPid = "com.liferay.training.gradebook.configuration.GradebookSystemServiceConfiguration", 
+		property = {
+				"javax.portlet.name=" + GradebookPortletKeys.GRADEBOOK, 
+				"mvc.command.name=/",
+				"mvc.command.name=" + MVCCommandNames.VIEW_ASSIGNMENTS 
+		}, 
+		service = MVCRenderCommand.class)
 public class ViewAssignmentsMVCRenderCommand implements MVCRenderCommand {
 
 	@Activate
